@@ -147,6 +147,48 @@ class PermissionsTableSeeder extends Seeder
                 'created_at' => '2023-02-10 14:00:26',
                 'updated_at' => '2023-02-10 14:00:26',
             ],
+            [
+                'id'         => '23',
+                'title'      => 'content_management_access',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '24',
+                'title'      => 'banner_management_access',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '25',
+                'title'      => 'banner_create',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '26',
+                'title'      => 'banner_show',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '27',
+                'title'      => 'banner_edit',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '28',
+                'title'      => 'banner_delete',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
+            [
+                'id'         => '29',
+                'title'      => 'banner_access',
+                'created_at' => '2023-02-10 14:00:26',
+                'updated_at' => '2023-02-10 14:00:26',
+            ],
         ];
 
         Permission::insert($permissions);

@@ -43,7 +43,7 @@
   <div class="card">
    <div class="text-center">
     <div class="card-body">
-     <img src="{{ asset('assets/img/profile/'.Auth::user()->profile) }}" class="rounded-circle" width="150px"
+     <img src="{{ Auth::user()->profile }}" class="rounded-circle" width="150px"
       height="150px" alt="Card image">
     </div>
     <div class="card-body">

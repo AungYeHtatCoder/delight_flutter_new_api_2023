@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 class Blog extends Model
 {
     use HasFactory;
-    protected $fillable = [
-        'title', 'image', 'image_mime', 'image_size',
-         'description', 'user_id'
-    ];
+    // protected $fillable = [
+    //     'title', 'image', 'image_mime', 'image_size',
+    //      'description', 'user_id'
+    // ];
+    // protected $fillable = ['title', 'image', 'image_mime', 'image_size', 'description', 'user_id'];
+protected $fillable = ['title', 'description', 'image', 'image_mime', 'image_size', 'user_id'];
+
 
     // Define the "users" relationship as a "belongsTo" relationship
     public function users()

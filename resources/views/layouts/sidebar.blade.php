@@ -55,7 +55,7 @@
   </ul>
  </li>
  @endcan
-
+@can('content_management_access')
  <li class=" nav-item"><a href="#"><i class="la la-clipboard"></i><span class="menu-title"
     data-i18n="Invoice">User Interface</span></a>
   <ul class="menu-content">
@@ -64,6 +64,7 @@
    <li><a class="menu-item" href="{{ url('/admin/blogs/') }}"><i></i><span data-i18n="Invoice Template">Blog</span></a>
    </li>
    </li>
+   @endcan
   </ul>
  </li>
 

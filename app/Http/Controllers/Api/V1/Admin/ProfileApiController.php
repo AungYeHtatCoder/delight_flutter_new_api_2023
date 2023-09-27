@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
+use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\File;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileApiController extends Controller
 {
@@ -78,49 +83,92 @@ class ProfileApiController extends Controller
      * Update the specified resource in storage.
      */
     // Update the specified resource in storage.
-public function update(Request $request)
+// public function update(Request $request)
+// {
+//     dd($request->all());
+//     if ($request->hasFile('profile')) {
+//         $profile = $request->file('profile');
+//         $ext = $profile->getClientOriginalExtension();
+
+//         // Checking the file extension
+//         if ($ext === "png" || $ext === "jpeg" || $ext === "jpg") {
+//             $user = User::find(Auth::user()->id);
+
+//             // Delete existing profile if it exists
+//             if ($user->profile) {
+//                 File::delete(public_path('assets/img/profile/' . $user->profile));
+//             }
+
+//             // Save the new image
+//             $filename = uniqid('profile') . '.' . $ext;
+//             $profile->move(public_path('assets/img/profile/'), $filename);
+
+//             // Update the profile in the database
+//             $user->update([
+//                 'profile' => $filename
+//             ]);
+
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Profile has been updated',
+//             ], 200);
+
+//         } else {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Please use a valid file type!',
+//             ], 400);
+//         }
+//     } else {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'No profile image uploaded',
+//         ], 400);
+//     }
+// }
+
+public function update(UserRequest $request, User $profile)
 {
-    dd($request->all());
-    if ($request->hasFile('profile')) {
-        $profile = $request->file('profile');
-        $ext = $profile->getClientOriginalExtension();
+    try {
+        $data = $request->validated();
 
-        // Checking the file extension
-        if ($ext === "png" || $ext === "jpeg" || $ext === "jpg") {
-            $user = User::find(Auth::user()->id);
+        /** @var \Illuminate\Http\UploadedFile $image */
+        $image = $data['profile'] ?? null;
+        
+        if ($image) {
+            $relativePath = $this->saveImage($image);
+            $data['profile'] = URL::to(Storage::url($relativePath));
+            $data['profile_mime'] = $image->getClientMimeType();
+            $data['profile_size'] = $image->getSize();
 
-            // Delete existing profile if it exists
-            if ($user->profile) {
-                File::delete(public_path('assets/img/profile/' . $user->profile));
+            if ($profile->image) {
+                Storage::deleteDirectory('/public/' . dirname($profile->image));
             }
-
-            // Save the new image
-            $filename = uniqid('profile') . '.' . $ext;
-            $profile->move(public_path('assets/img/profile/'), $filename);
-
-            // Update the profile in the database
-            $user->update([
-                'profile' => $filename
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile has been updated',
-            ], 200);
-
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please use a valid file type!',
-            ], 400);
         }
-    } else {
-        return response()->json([
-            'success' => false,
-            'message' => 'No profile image uploaded',
-        ], 400);
+
+        $profile->update($data);
+
+        return response()->json(['message' => 'Profile updated successfully'], 200);
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Failed to update profile', 'details' => $e->getMessage()], 400);
     }
 }
+
+    public function saveImage(UploadedFile $image)
+    {
+        $path = 'profile_image/' . Str::random();
+        //$path = 'images/product_image';
+
+        if (!Storage::exists($path)) {
+            Storage::makeDirectory($path, 0755, true);
+        }
+        if (!Storage::putFileAS('public/' . $path, $image, $image->getClientOriginalName())) {
+            throw new \Exception("Unable to save file \"{$image->getClientOriginalName()}\"");
+        }
+
+        return $path . '/' . $image->getClientOriginalName();
+    }
 
 
 // Password change function

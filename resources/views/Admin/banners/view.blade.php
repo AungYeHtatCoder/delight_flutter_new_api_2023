@@ -75,7 +75,7 @@
          </div>
          <div class="card-content collpase show">
           <div class="card-body">
-            <img src="{{ asset('assets/img/banners/'.$banner->image) }}" width="100%" class="img-thumbnail" alt="">
+            <img src="{{ $banner->image }}" width="100%" class="img-thumbnail" alt="">
             <div class="card-footer">
                 <p>Status: <span class="badge badge-{{ $banner->status === 1 ? "success" : "danger" }}">{{ $banner->status === 1 ? "Online" : "Offline" }}</span></p>
             </div>

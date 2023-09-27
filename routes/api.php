@@ -33,6 +33,7 @@ Route::get('/blog-detail/{id}', [HomeApiController::class, 'blogDetail']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 Route::apiResource('/profiles', ProfileApiController::class);
+Route::put('/profile/{profile}', [ProfileApiController::class, 'update'])->name('api.profile.update');
 Route::put('/phone-address-change', [ProfileApiController::class, 'PhoneAddressChange']);
 Route::put('/change-password', [ProfileApiController::class, 'changePassword'])->name('changePassword');
 
@@ -78,5 +79,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'App\Http\Co
     // blog post detail route
     Route::get('blog-posts/{id}', [BlogPostApiController::class, 'showDetail']);
     Route::apiResource('banners', BannerApiController::class);
+    Route::put('banners/{banner}', [BannerApiController::class, 'update']);
     Route::post('/banners/statusChange/{id}', [BannerApiController::class, 'statusChange']);
 });

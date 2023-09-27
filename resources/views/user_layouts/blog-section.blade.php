@@ -26,7 +26,7 @@
         @foreach ($blogs as $blog)
         <div class="col-lg-4 col-sm-12 mt-5">
             <div class="card">
-              <img src="{{ asset('assets/img/blogs/'.$blog->image) }}" alt="" />
+              <img src="{{ $blog->image }}" alt="" />
               <h6>
                 <a class="mb-2 d-block" href="{{ url('/blog-detail/'.$blog->id) }}">{{ $blog->title }} </a>
               </h6>

@@ -6,7 +6,7 @@
       <div class="col-md-8">
         <div class="card detail-box">
           <div class="img-post my-3">
-            <img src="{{ asset('assets/img/blogs/'.$blog->image) }}" class="card-img-top w-100" alt="" />
+            <img src="{{ $blog->image }}" class="card-img-top w-100" alt="" />
           </div>
           <div class="post-title">
             <h4>{{ $blog->title }}</h4>
@@ -59,7 +59,7 @@
                 @foreach ($comments as $comment)
                     <li class="row clearfix mt-2">
                         <div class=" col-md-2 col-4">
-                        <img class="rounded-circle" width="90px" height="90px" src="{{ asset('assets/img/profile/'.$comment->users->profile) }}" alt="Awesome Image" />
+                        <img class="rounded-circle" width="90px" height="90px" src="{{ $comment->users->profile }}" alt="Awesome Image" />
                         </div>
                         <div class="text-box col-md-10 col-8 p-l-0 p-r0">
                           <div class="d-flex">
@@ -146,7 +146,7 @@
             class="image d-flex flex-column justify-content-center align-items-center"
           >
             <div class="">
-              <img src="{{ asset('assets/img/profile/'.Auth::user()->profile) }}" height="100" width="100" />
+              <img src="{{ Auth::user()->profile }}" height="100" width="100" />
             </div>
             <span class="name mt-3">{{ Auth::user()->name }}</span>
             {{-- <span class="id">@emilly</span> --}}

@@ -95,7 +95,7 @@
         @foreach ($blogs as $key => $blog)
         <tr>
          <td>{{ ++$key }}</td>
-         <td><img src="{{ asset('assets/img/blogs/'.$blog->image) }}" width="100px" class="img-thumbnail" alt=""></td>
+         <td><img src="{{ $blog->image }}" width="100px" class="img-thumbnail" alt=""></td>
          <td>{{ $blog->title }}</td>
          <td>{{ $blog->users->name }}</td>
          <td>{{ $blog->created_at->format('M j, Y') }}</td>

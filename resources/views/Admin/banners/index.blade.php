@@ -94,7 +94,7 @@
         @foreach ($banners as $key => $banner)
         <tr>
          <td>{{ ++$key }}</td>
-         <td><img src="{{ asset('assets/img/banners/'.$banner->image) }}" width="100px" class="img-thumbnail" alt=""></td>
+         <td><img src="{{ $banner->image }}" width="100px" class="img-thumbnail" alt=""></td>
          <td>
             {{-- <span class="badge badge-{{ $banner->status === 1 ? "success" : "danger" }}">{{ $banner->status === 1 ? "ON" : "OFF" }}</span> --}}
             <form action="{{ url('/admin/banners/statusChange/'.$banner->id) }}" method="post">

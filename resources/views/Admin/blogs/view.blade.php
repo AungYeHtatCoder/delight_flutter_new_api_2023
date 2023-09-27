@@ -75,7 +75,7 @@
          </div>
          <div class="card-content collpase show">
           <div class="card-body">
-            <img src="{{ asset('assets/img/blogs/'.$blog->image) }}" width="100%" class="img-thumbnail" alt="">
+            <img src="{{ $blog->image }}" width="100%" class="img-thumbnail" alt="">
             <h4 class="mt-2">Title - {{ $blog->title }}</h4>
             <p>
                 <span><i class="fas fa-calendar mr-1"></i>{{ $blog->created_at->format('M, d Y') }}</span>

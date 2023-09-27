@@ -29,6 +29,6 @@
 
 <script>
   // csrf token 
-  var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
-  console.log(CSRF_TOKEN)
+  // var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
+  // console.log(CSRF_TOKEN)
 </script>
