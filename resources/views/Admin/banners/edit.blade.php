@@ -78,7 +78,9 @@
 
 
            <form class="form" method="post" action="{{ url('/admin/banners/edit/'.$banner->id) }}" enctype="multipart/form-data">
+
             @csrf
+            {{-- @method('PUT') --}}
             <div class="form-body">
              <div class="row">
               <div class="form-group col-12 mb-2">

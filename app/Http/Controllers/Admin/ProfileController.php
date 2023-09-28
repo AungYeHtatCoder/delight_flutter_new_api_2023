@@ -99,33 +99,71 @@ class ProfileController extends Controller
 //     }
 // }
 
-public function update(UserRequest $request, User $profile)
-    {
+// public function update(UserRequest $request, User $profile)
+//     {
        
-        $data = $request->validated();
-        //dd($data);
+//         $data = $request->validated();
+//         //dd($data);
 
-        /** @var \Illuminate\Http\UploadedFile $image */
-        $image = $data['profile'] ?? null;
-        // Check if image was given and save on local file system
-        if ($image) {
-            $relativePath = $this->saveImage($image);
-            $data['profile'] = URL::to(Storage::url($relativePath));
-            $data['profile_mime'] = $image->getClientMimeType();
-            $data['profile_size'] = $image->getSize();
+//         /** @var \Illuminate\Http\UploadedFile $image */
+//         $image = $data['profile'] ?? null;
+//         // Check if image was given and save on local file system
+//         if ($image) {
+//             $relativePath = $this->saveImage($image);
+//             $data['profile'] = URL::to(Storage::url($relativePath));
+//             $data['profile_mime'] = $image->getClientMimeType();
+//             $data['profile_size'] = $image->getSize();
 
-            // If there is an old image, delete it
-            if ($profile->image) {
-                Storage::deleteDirectory('/public/' . dirname($profile->image));
-            }
+//             // If there is an old image, delete it
+//             if ($profile->image) {
+//                 Storage::deleteDirectory('/public/' . dirname($profile->image));
+//             }
+//         }
+
+//         $profile->update($data);
+
+//         // return redirect()->route('admin.profiles.index')->with('toast_success', 'Profile updated successfully');
+//         return redirect()->back()->with('toast_success', 'Profile updated successfully');
+//     }
+
+public function update(UserRequest $request, User $profile)
+{
+    $data = $request->validated();
+
+    // Check if a new profile image has been uploaded
+    $newImage = $request->file('profile');
+    
+    if ($newImage) {
+       // $main_folder = 'profile_images/';
+        $main_folder = 'profile_image/' . Str::random();
+        $filename = $newImage->getClientOriginalName();
+
+        // Store the new image with specified visibility settings
+        $path = Storage::putFileAs('public/'.
+            $main_folder, 
+            $newImage, 
+            $filename,
+            [
+                'visibility' => 'public',
+                'directory_visibility' => 'public'
+            ]
+        );
+
+        $data['profile'] = URL::to(Storage::url($path));
+        $data['profile_mime'] = $newImage->getClientMimeType();
+        $data['profile_size'] = $newImage->getSize();
+        
+        // If there is an old image, delete it
+        if ($profile->profile) {
+            $oldImagePath = str_replace(URL::to('/'), '', $profile->profile);
+            Storage::delete($oldImagePath);
         }
-
-        $profile->update($data);
-
-        // return redirect()->route('admin.profiles.index')->with('toast_success', 'Profile updated successfully');
-        return redirect()->back()->with('toast_success', 'Profile updated successfully');
     }
 
+    $profile->update($data);
+
+    return redirect()->back()->with('toast_success', 'Profile updated successfully');
+}
 
 
     // password change function

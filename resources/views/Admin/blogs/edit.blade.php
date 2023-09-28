@@ -92,7 +92,7 @@
                 <div class="form-group col-12 mb-2">
                     <label for="eventInput2">Image</label>
                     <input type="file" id="eventInput2" class="form-control" placeholder="Role Name" name="image">
-                    <img src="{{ asset('assets/img/blogs/'.$blog->image) }}" width="100px" alt="">
+                    <img src="{{ $blog->image }}" width="100px" alt="">
                 </div>
                 <div class="form-group col-12 mb-2">
                 <label for="eventInput2">Description</label>

@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Models\Admin\Blog;
+use Log;
 use App\Models\User;
+use App\Models\Admin\Blog;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use App\Http\Requests\BlogRequest;
+use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\StoreBlogPostRequest;
 use App\Http\Requests\UpdateBlogPostRequest;
 use App\Http\Resources\Admin\BlogPostResource;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage; // Import the Storage facade
-use Illuminate\Support\Facades\URL;
-use Illuminate\Http\UploadedFile;
 
 class BlogPostApiController extends Controller
 {
@@ -30,30 +31,69 @@ class BlogPostApiController extends Controller
 
         return new BlogPostResource(Blog::with(['users'])->get());
     }
-    public function store(Request $request)
+
+    public function store(BlogRequest $request)
 {
-    try {
-        $data = $request->all();
-        $data['user_id'] = auth()->user()->id;
+    // Get the validated data from the request
+    $data = $request->validated();
 
-        /** @var \Illuminate\Http\UploadedFile $image */
-        $image = $data['image'] ?? null;
+    // Add user_id to the data (if needed)
+    $data['user_id'] = Auth::user()->id;
 
-        // Check if image was given and save on local file system
-        if ($image) {
-            $relativePath = $this->saveImage($image);
-            $data['image'] = URL::to(Storage::url($relativePath));
-            $data['image_mime'] = $image->getClientMimeType();
-            $data['image_size'] = $image->getSize();
-        }
+    // Check if an image has been uploaded
+    $image = $request->file('image');
 
-        Blog::create($data);
-        return response()->json(['message' => 'Blog Created successfully'], 201);
+    if ($image) {
+        $mainFolder = 'blog_images/' . Str::random(); // Modify the folder structure as needed
+        $filename = $image->getClientOriginalName();
 
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Failed to create blog', 'details' => $e->getMessage()], 500);
+        // Store the new image with specified visibility settings
+        $path = Storage::putFileAs(
+            'public/' . $mainFolder,
+            $image,
+            $filename,
+            [
+                'visibility' => 'public',
+                'directory_visibility' => 'public',
+            ]
+        );
+
+        $data['image'] = URL::to(Storage::url($path));
+        $data['image_mime'] = $image->getClientMimeType();
+        $data['image_size'] = $image->getSize();
     }
+
+    // Create a new blog entry with the provided data
+    $blog = Blog::create($data);
+
+    // Return a JSON response indicating success and the created resource
+    return response()->json(['message' => 'Blog Created', 'data' => $blog], 201);
 }
+
+//     public function store(Request $request)
+// {
+//     try {
+//         $data = $request->all();
+//         $data['user_id'] = auth()->user()->id;
+
+//         /** @var \Illuminate\Http\UploadedFile $image */
+//         $image = $data['image'] ?? null;
+
+//         // Check if image was given and save on local file system
+//         if ($image) {
+//             $relativePath = $this->saveImage($image);
+//             $data['image'] = URL::to(Storage::url($relativePath));
+//             $data['image_mime'] = $image->getClientMimeType();
+//             $data['image_size'] = $image->getSize();
+//         }
+
+//         Blog::create($data);
+//         return response()->json(['message' => 'Blog Created successfully'], 201);
+
+//     } catch (\Exception $e) {
+//         return response()->json(['error' => 'Failed to create blog', 'details' => $e->getMessage()], 500);
+//     }
+// }
     // public function store(StoreBlogPostRequest $request)
     // {
         
@@ -93,51 +133,162 @@ class BlogPostApiController extends Controller
         return new BlogPostResource($blogPost->load(['users']));
     }
 
-    public function update(Request $request, $id)
+
+public function update(Request $request, $id)
 {
     try {
+        // Find the blog post by ID
         $blog = Blog::findOrFail($id);
 
-        $data = $request->all();
+        // Validate the request data here if needed
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image' => 'nullable|image', // Adjust validation rules as needed
+        ]);
 
-        // For APIs, get the user from the API guard.
-        //$data['user_id'] = auth('api')->user()->id;
-        $data['user_id'] = auth()->user()->id;
+        // Check if a new image has been uploaded
+        $newImage = $request->file('image');
 
-        // Check if an image has been uploaded
-        if (isset($data['image']) && $data['image'] instanceof \Illuminate\Http\UploadedFile) {
-            // Delete the old image if it exists
+        if ($newImage) {
+            $mainFolder = 'blog_images/' . Str::random(); // Modify the folder structure as needed
+            $filename = $newImage->getClientOriginalName();
+
+            // Store the new image with specified visibility settings
+            $path = Storage::putFileAs(
+                'public/' . $mainFolder,
+                $newImage,
+                $filename,
+                [
+                    'visibility' => 'public',
+                    'directory_visibility' => 'public',
+                ]
+            );
+
+            $data['image'] = URL::to(Storage::url($path));
+            $data['image_mime'] = $newImage->getClientMimeType();
+            $data['image_size'] = $newImage->getSize();
+
+            // If there is an old image, delete it
             if ($blog->image) {
-                Storage::delete('public/' . $blog->image);
+                // Extract the relative path from the full URL.
+                $oldImagePath = str_replace(URL::to('/'), '', $blog->image);
+                Storage::delete($oldImagePath);
             }
-
-            // Save the new image and retrieve its path
-            $uploadedImage = $data['image'];
-            $relativePath = $this->saveImage($uploadedImage);
-
-            // Update the image data for the blog
-            $data['image'] = URL::to(Storage::url($relativePath));
-            $data['image_mime'] = $uploadedImage->getClientMimeType();
-            $data['image_size'] = $uploadedImage->getSize();
         }
 
+        // You can add the user_id here if needed
+        $data['user_id'] = Auth::user()->id;
+
+        // Update the blog post with the new data
         $blog->update($data);
 
-        // Return a JSON response
-        return response()->json([
-            'message' => 'Blog Updated.',
-            'blog' => $blog
-        ], 200);
-
+        // Return a JSON response indicating success
+        return response()->json(['message' => 'Blog Updated'], 200);
     } catch (\Exception $e) {
-        Log::error("Failed to update blog: " . $e->getMessage());
+        // Log the error for debugging
+       // \Log::error($e);
 
-        return response()->json([
-            'message' => "Failed to update blog.",
-            'error' => $e->getMessage()
-        ], 500);
+        // Return an error response
+        return response()->json(['error' => 'An error occurred during the update.'], 500);
     }
 }
+
+
+//     public function update(BlogRequest $request, $id)
+// {
+//     // Find the blog post by ID
+//     $blog = Blog::findOrFail($id);
+
+//     // Get the validated data from the request
+//     $data = $request->validated();
+
+//     // Check if a new image has been uploaded
+//     $newImage = $request->file('image');
+
+//     if ($newImage) {
+//         $mainFolder = 'blog_images/' . Str::random(); // Modify the folder structure as needed
+//         $filename = $newImage->getClientOriginalName();
+
+//         // Store the new image with specified visibility settings
+//         $path = Storage::putFileAs(
+//             'public/' . $mainFolder,
+//             $newImage,
+//             $filename,
+//             [
+//                 'visibility' => 'public',
+//                 'directory_visibility' => 'public',
+//             ]
+//         );
+
+//         $data['image'] = URL::to(Storage::url($path));
+//         $data['image_mime'] = $newImage->getClientMimeType();
+//         $data['image_size'] = $newImage->getSize();
+
+//         // If there is an old image, delete it
+//         if ($blog->image) {
+//             // Extract the relative path from the full URL.
+//             $oldImagePath = str_replace(URL::to('/'), '', $blog->image);
+//             Storage::delete($oldImagePath);
+//         }
+//     }
+
+//     // You can add the user_id here if needed
+//     $data['user_id'] = Auth::user()->id;
+
+//     // Update the blog post with the new data
+//     $blog->update($data);
+
+//     // Return a JSON response indicating success
+//     return response()->json(['message' => 'Blog Updated'], 200);
+// }
+
+
+//     public function update(Request $request, $id)
+// {
+//     try {
+//         $blog = Blog::findOrFail($id);
+
+//         $data = $request->all();
+
+//         // For APIs, get the user from the API guard.
+//         //$data['user_id'] = auth('api')->user()->id;
+//         $data['user_id'] = auth()->user()->id;
+
+//         // Check if an image has been uploaded
+//         if (isset($data['image']) && $data['image'] instanceof \Illuminate\Http\UploadedFile) {
+//             // Delete the old image if it exists
+//             if ($blog->image) {
+//                 Storage::delete('public/' . $blog->image);
+//             }
+
+//             // Save the new image and retrieve its path
+//             $uploadedImage = $data['image'];
+//             $relativePath = $this->saveImage($uploadedImage);
+
+//             // Update the image data for the blog
+//             $data['image'] = URL::to(Storage::url($relativePath));
+//             $data['image_mime'] = $uploadedImage->getClientMimeType();
+//             $data['image_size'] = $uploadedImage->getSize();
+//         }
+
+//         $blog->update($data);
+
+//         // Return a JSON response
+//         return response()->json([
+//             'message' => 'Blog Updated.',
+//             'blog' => $blog
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         Log::error("Failed to update blog: " . $e->getMessage());
+
+//         return response()->json([
+//             'message' => "Failed to update blog.",
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
 
 
 //     public function update(Request $request, $id)

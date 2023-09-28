@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Validation\ValidationException;
 class ProfileApiController extends Controller
 {
     /**
@@ -126,34 +126,77 @@ class ProfileApiController extends Controller
 //         ], 400);
 //     }
 // }
-
 public function update(UserRequest $request, User $profile)
 {
-    try {
-        $data = $request->validated();
+    $data = $request->validated();
 
-        /** @var \Illuminate\Http\UploadedFile $image */
-        $image = $data['profile'] ?? null;
+    // Check if a new profile image has been uploaded
+    $newImage = $request->file('profile');
+    
+    if ($newImage) {
+        $mainFolder = 'profile_image/' . Str::random();
+        $filename = $newImage->getClientOriginalName();
+
+        // Store the new image with specified visibility settings
+        $path = Storage::putFileAs(
+            'public/' . $mainFolder, 
+            $newImage, 
+            $filename,
+            [
+                'visibility' => 'public',
+                'directory_visibility' => 'public'
+            ]
+        );
+
+        $data['profile'] = URL::to(Storage::url($path));
+        $data['profile_mime'] = $newImage->getClientMimeType();
+        $data['profile_size'] = $newImage->getSize();
         
-        if ($image) {
-            $relativePath = $this->saveImage($image);
-            $data['profile'] = URL::to(Storage::url($relativePath));
-            $data['profile_mime'] = $image->getClientMimeType();
-            $data['profile_size'] = $image->getSize();
-
-            if ($profile->image) {
-                Storage::deleteDirectory('/public/' . dirname($profile->image));
-            }
+        // If there is an old image, delete it
+        if ($profile->profile) {
+            $oldImagePath = str_replace(URL::to('/'), '', $profile->profile);
+            Storage::delete($oldImagePath);
         }
-
-        $profile->update($data);
-
-        return response()->json(['message' => 'Profile updated successfully'], 200);
-
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Failed to update profile', 'details' => $e->getMessage()], 400);
     }
+
+    try {
+        // Update the user profile data
+        $profile->update($data);
+    } catch (\Exception $e) {
+        // Handle any database errors
+        return response()->json(['message' => 'Profile update failed'], 500);
+    }
+
+    // Return a JSON response indicating success
+    return response()->json(['message' => 'Profile updated successfully', 'data' => $profile]);
 }
+// public function update(UserRequest $request, User $profile)
+// {
+//     try {
+//         $data = $request->validated();
+
+//         /** @var \Illuminate\Http\UploadedFile $image */
+//         $image = $data['profile'] ?? null;
+        
+//         if ($image) {
+//             $relativePath = $this->saveImage($image);
+//             $data['profile'] = URL::to(Storage::url($relativePath));
+//             $data['profile_mime'] = $image->getClientMimeType();
+//             $data['profile_size'] = $image->getSize();
+
+//             if ($profile->image) {
+//                 Storage::deleteDirectory('/public/' . dirname($profile->image));
+//             }
+//         }
+
+//         $profile->update($data);
+
+//         return response()->json(['message' => 'Profile updated successfully'], 200);
+
+//     } catch (\Exception $e) {
+//         return response()->json(['error' => 'Failed to update profile', 'details' => $e->getMessage()], 400);
+//     }
+// }
 
     public function saveImage(UploadedFile $image)
     {

@@ -1,15 +1,16 @@
 <?php
 
-use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\BlogController;
-use App\Http\Controllers\Admin\PermissionsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\RolesController;
-use App\Http\Controllers\Admin\UserLogActivityController;
-use App\Http\Controllers\Admin\UsersController;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Home\HomeController;
+use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\RolesController;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\UserLogActivityController;
 
 
 /*
@@ -73,7 +74,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'App\Http\Co
     Route::post('/banners/create/', [BannerController::class, 'store']);
     Route::get('/banners/view/{id}', [BannerController::class, 'view']);
     Route::get('/banners/edit/{id}', [BannerController::class, 'edit']);
-    Route::post('/banners/edit/{id}', [BannerController::class, 'update']);
+    //Route::post('/banners/edit/{id}', [BannerController::class, 'update']);
+    Route::post('/banners/edit/{id}', [BannerController::class, 'update'])->name('banners.update');
+
     Route::post('/banners/delete/', [BannerController::class, 'delete']);
     Route::post('/banners/statusChange/{id}', [BannerController::class, 'statusChange']);
 
@@ -91,4 +94,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'App\Http\Co
     // csrf token error fix 
     Route::get('/csrf-token', function () {
         return response()->json(['csrfToken' => csrf_token()]);
+    });
+
+    // artisan storage link route
+    Route::get('/storage-link', function () {
+        Artisan::call('storage:link');
+        return 'success';
     });

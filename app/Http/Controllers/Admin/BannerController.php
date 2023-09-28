@@ -11,7 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BannerRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Validation\ValidationException;
 class BannerController extends Controller
 {
     public function index(){
@@ -22,24 +22,56 @@ class BannerController extends Controller
     public function create(){
         return view('Admin.banners.create');
     }
+    public function store(BannerRequest $request)
+{
+    //dd($request->all());
+    $data = $request->validated();
 
-    public function store(BannerRequest $request){
-        $data = $request->validated();
-        //dd($data);
+    // Check if a new image has been uploaded
+    $newImage = $request->file('image');
 
-        /** @var \Illuminate\Http\UploadedFile $image */
-        $image = $data['image'] ?? null;
-        // Check if image was given and save on local file system
-        if ($image) {
-            $relativePath = $this->saveImage($image);
-            $data['image'] = URL::to(Storage::url($relativePath));
-            $data['image_mime'] = $image->getClientMimeType();
-            $data['image_size'] = $image->getSize();
-        }
-        //$image->save($data);
-        Banner::create($data);
+    if ($newImage) {
+        $mainFolder = 'banners/' . Str::random();
+        $filename = $newImage->getClientOriginalName();
 
-        return redirect('/admin/banners/')->with('success', "Banner Created.");
+        // Store the new image with specified visibility settings
+        $path = Storage::putFileAs(
+            'public/' . $mainFolder,
+            $newImage,
+            $filename,
+            [
+                'visibility' => 'public',
+                'directory_visibility' => 'public'
+            ]
+        );
+
+        $data['image'] = URL::to(Storage::url($path));
+        $data['image_mime'] = $newImage->getClientMimeType();
+        $data['image_size'] = $newImage->getSize();
+    }
+
+    Banner::create($data);
+
+    return redirect('/admin/banners/')->with('success', 'Banner Created.');
+}
+
+    // public function store(BannerRequest $request){
+    //     $data = $request->validated();
+    //     //dd($data);
+
+    //     /** @var \Illuminate\Http\UploadedFile $image */
+    //     $image = $data['image'] ?? null;
+    //     // Check if image was given and save on local file system
+    //     if ($image) {
+    //         $relativePath = $this->saveImage($image);
+    //         $data['image'] = URL::to(Storage::url($relativePath));
+    //         $data['image_mime'] = $image->getClientMimeType();
+    //         $data['image_size'] = $image->getSize();
+    //     }
+    //     //$image->save($data);
+    //     Banner::create($data);
+
+    //     return redirect('/admin/banners/')->with('success', "Banner Created.");
 
         // $request->validate([
         //     'image' => 'required'
@@ -55,7 +87,7 @@ class BannerController extends Controller
         // ]);
 
         // return redirect('/admin/banners/')->with('success', "Banner Created.");
-    }
+    //}
 
     public function view($id){
         $banner = Banner::find($id);
@@ -66,19 +98,34 @@ class BannerController extends Controller
         $banner = Banner::find($id);
         return view('Admin.banners.edit', compact('banner'));
     }
+    public function update(BannerRequest $request, $id)
+{
+    // Find the Banner model by its ID or throw a 404 error if not found
+    $banner = Banner::findOrFail($id);
 
-    public function update(BannerRequest $request, Banner $banner){
-         $data = $request->validated();
+    $data = $request->validated();
 
-    /** @var \Illuminate\Http\UploadedFile $uploadedImage */
-    $uploadedImage = $data['image'] ?? null;
+    // Check if a new image has been uploaded
+    $newImage = $request->file('image');
 
-    // Check if image was given and save on local file system
-    if ($uploadedImage) {
-        $relativePath = $this->saveImage($uploadedImage);
-        $data['image'] = URL::to(Storage::url($relativePath));
-        $data['image_mime'] = $uploadedImage->getClientMimeType();
-        $data['image_size'] = $uploadedImage->getSize();
+    if ($newImage) {
+        $mainFolder = 'banners/' . Str::random();
+        $filename = $newImage->getClientOriginalName();
+
+        // Store the new image with specified visibility settings
+        $path = Storage::putFileAs(
+            'public/' . $mainFolder,
+            $newImage,
+            $filename,
+            [
+                'visibility' => 'public',
+                'directory_visibility' => 'public'
+            ]
+        );
+
+        $data['image'] = URL::to(Storage::url($path));
+        $data['image_mime'] = $newImage->getClientMimeType();
+        $data['image_size'] = $newImage->getSize();
 
         // If there is an old image, delete it
         if ($banner->image) {
@@ -87,9 +134,78 @@ class BannerController extends Controller
             Storage::deleteDirectory(dirname($oldImagePath));
         }
     }
-    
+
+    // Update the banner record with new data
     $banner->update($data);
-    return redirect('/admin/banners/')->with('success', "Banner Updated.");
+
+    // Redirect back with a success message
+    return redirect('/admin/banners/')->with('success', 'Banner Updated.');
+}
+//    public function update(BannerRequest $request, Banner $banner)
+// {
+//     $data = $request->validated();
+
+//     // Check if a new image has been uploaded
+//     $newImage = $request->file('image');
+
+//     if ($newImage) {
+//         $mainFolder = 'banners/' . Str::random();
+//         $filename = $newImage->getClientOriginalName();
+
+//         // Store the new image with specified visibility settings
+//         $path = Storage::putFileAs(
+//             'public/' . $mainFolder,
+//             $newImage,
+//             $filename,
+//             [
+//                 'visibility' => 'public',
+//                 'directory_visibility' => 'public'
+//             ]
+//         );
+
+//         $data['image'] = URL::to(Storage::url($path));
+//         $data['image_mime'] = $newImage->getClientMimeType();
+//         $data['image_size'] = $newImage->getSize();
+
+//         // If there is an old image, delete it
+//         if ($banner->image) {
+//             // Extract the relative path from the full URL.
+//             $oldImagePath = str_replace(URL::to('/'), '', $banner->image);
+//             Storage::deleteDirectory(dirname($oldImagePath));
+//         }
+//     }
+
+//     // Update the banner record with new data
+//     $banner->update($data);
+
+//     return redirect('/admin/banners/')->with('success', 'Banner Updated.');
+// }
+
+
+
+    // public function update(BannerRequest $request, Banner $banner){
+    //      $data = $request->validated();
+
+    // /** @var \Illuminate\Http\UploadedFile $uploadedImage */
+    // $uploadedImage = $data['image'] ?? null;
+
+    // // Check if image was given and save on local file system
+    // if ($uploadedImage) {
+    //     $relativePath = $this->saveImage($uploadedImage);
+    //     $data['image'] = URL::to(Storage::url($relativePath));
+    //     $data['image_mime'] = $uploadedImage->getClientMimeType();
+    //     $data['image_size'] = $uploadedImage->getSize();
+
+    //     // If there is an old image, delete it
+    //     if ($banner->image) {
+    //         // Extract the relative path from the full URL.
+    //         $oldImagePath = str_replace(URL::to('/'), '', $banner->image);
+    //         Storage::deleteDirectory(dirname($oldImagePath));
+    //     }
+    // }
+    
+    // $banner->update($data);
+    // return redirect('/admin/banners/')->with('success', "Banner Updated.");
 
         // $request->validate([
         //     'image' => 'required'
@@ -112,7 +228,7 @@ class BannerController extends Controller
         //     'image' => $filename
         // ]);
 
-    }
+    //}
 
     public function statusChange(Request $request, $id){
         $request->validate([
