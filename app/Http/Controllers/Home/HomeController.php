@@ -57,23 +57,51 @@ class HomeController extends Controller
         // return $comments;
         return view('blog-detail', compact('blog', 'comments'));
     }
-
-    //comment section
-    public function comment(Request $request, $id){
-        $blog = Blog::find($id);
-        if(!$blog){
-            return redirect()->back()->with('error', "Blog Not Found!");
-        }
-        $request->validate([
-            'comment' => 'required'
-        ]);
+    public function comment(Request $request, $id)
+{
+    $blog = Blog::find($id);
+    
+    if (!$blog) {
+        return redirect()->back()->with('error', "Blog Not Found!");
+    }
+    
+    $request->validate([
+        'comment' => 'required'
+    ]);
+    
+    // Check if there is an authenticated user
+    if (Auth::check()) {
         Comment::create([
             'blog_id' => $id,
             'user_id' => Auth::user()->id,
             'comment' => $request->comment
         ]);
+
         return redirect()->back()->with('success', "Comment Created.");
+    } else {
+        return redirect()->route('home')->with('error', 'You must be logged in to leave a comment.');
     }
+}
+
+    //comment section
+    // public function comment(Request $request, $id){
+    //     $blog = Blog::find($id);
+    //     if(!$blog){
+    //         return redirect()->back()->with('error', "Blog Not Found!");
+    //     }
+    //     $request->validate([
+    //         'comment' => 'required'
+    //     ]);
+        
+    //     Comment::create([
+    //         'blog_id' => $id,
+    //         'user_id' => Auth::user()->id,
+    //         'comment' => $request->comment
+    //     ]);
+    //     return redirect()->back()->with('success', "Comment Created.");
+    // }
+
+
 
     public function commentEdit(Request $request){
         $request->validate([
