@@ -18,16 +18,18 @@ class HomeApiController extends Controller
 {
     public function index(Request $request)
     {
-    $blogs = Blog::withCount(['likes', 'comments'])
+    $blogs = Blog::withCount(['likes', 'comments'])->with('users')
         ->latest()
         ->paginate(9);
 
     foreach ($blogs as $blog) {
         $blog->desc = Str::limit($blog->description, 250, '...');
     }
-
+    return response()->json([
+        'data' => $blogs
+    ]);
     // Transform the blogs collection into a JSON response using the BlogPostResource
-    return BlogHomeResource::collection($blogs);
+    // return BlogHomeResource::collection($blogs);
     }
     public function search(Request $request): JsonResponse
 {
@@ -165,7 +167,7 @@ public function like(Request $request, $id)
         $blog = Blog::with(['likes', 'comments'])
             ->withCount(['likes', 'comments'])
             ->findOrFail($id);
-        
+
         $comments = Comment::with('users')
             ->where('blog_id', $id)
             ->latest()
